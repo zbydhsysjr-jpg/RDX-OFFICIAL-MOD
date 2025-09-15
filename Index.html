@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Key Generator</title>
+<script type="module">
+  // Firebase App (v9) Initialization
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, set, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "config-v9.firebaseapp.com",
+    databaseURL: "https://config-v9-default-rtdb.firebaseio.com",
+    projectId: "config-v9",
+    storageBucket: "config-v9.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Generate random key
+  function generateKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    for (let i = 0; i < 16; i++) {
+      key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return key;
+  }
+
+  // Add key to Firebase
+  async function addKey(type) {
+    const key = generateKey();
+    const keyRef = push(ref(db, 'keys'));
+    await set(keyRef, {
+      key: key,
+      type: type,
+      createdAt: Date.now()
+    });
+    alert("Key Generated: " + key + " (" + type + ")");
+    loadKeys();
+  }
+
+  // Load all keys
+  async function loadKeys() {
+    const snapshot = await get(ref(db, 'keys'));
+    const keysList = document.getElementById('keysList');
+    keysList.innerHTML = '';
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      Object.keys(data).forEach(id => {
+        const item = data[id];
+        const li = document.createElement('li');
+        li.textContent = `${item.key} | Type: ${item.type} | Created: ${new Date(item.createdAt).toLocaleString()}`;
+        keysList.appendChild(li);
+      });
+    } else {
+      keysList.innerHTML = '<li>No keys found.</li>';
+    }
+  }
+
+  window.addKey = addKey;
+  window.onload = loadKeys;
+</script>
+<style>
+  body { font-family: Arial; margin: 20px; background: #f4f4f4; }
+  h1 { text-align: center; }
+  button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+  ul { list-style: none; padding: 0; }
+  li { background: #fff; margin: 5px 0; padding: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<h1>Admin Panel - Key Generator</h1>
+<div style="text-align:center;">
+  <button onclick="addKey('single')">Generate Single Device Key</button>
+  <button onclick="addKey('dual')">Generate Dual Device Key</button>
+  <button onclick="addKey('unlimited')">Generate Unlimited Device Key</button>
+</div>
+<h2>Generated Keys:</h2>
+<ul id="keysList">
+  <li>Loading...</li>
+</ul>
+</body>
+</html>
